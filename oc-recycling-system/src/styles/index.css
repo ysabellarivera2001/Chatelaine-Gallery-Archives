@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-bg font-sans text-text antialiased;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply text-text placeholder:text-muted focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10;
+  }
+
+  ::selection {
+    background: rgba(255, 188, 181, 0.35);
+  }
+}
