@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OC Recycling System</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --surface: #242424;
+      --text: #e0e0e0;
+      --muted: #a8a8a8;
+      --pink-primary: #ffbcb5;
+      --yellow-primary: #eed495;
+      --danger: #d46a6a;
+      --shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --font-body: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-body);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 188, 181, 0.08), transparent 32%),
+        radial-gradient(circle at top right, rgba(241, 206, 102, 0.08), transparent 28%),
+        linear-gradient(180deg, #171717 0%, #1a1a1a 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    .app-shell { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      padding: 24px 20px;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      background: linear-gradient(180deg, rgba(255, 188, 181, 0.1), transparent 28%), rgba(20, 20, 20, 0.95);
+      backdrop-filter: blur(12px);
+    }
+    .brand, .card, .stat-card, .table-card, .character-card, .status-column, .profile-panel, .connection-card {
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)), #242424;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: var(--shadow);
+    }
+    .brand { margin-bottom: 28px; padding: 18px; }
+    .brand h1, .view-title { margin: 0; font-family: var(--font-heading); letter-spacing: 0.02em; }
+    .brand p, .helper-text, .empty-state, .notice, .footer-note, .sidebar-panel p, .view-header p { color: var(--muted); line-height: 1.6; }
+    .nav-list, .manage-list { display: grid; gap: 10px; }
+    .nav-link, .button, .ghost-button, .danger-button, .small-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
+    }
+    .nav-link {
+      justify-content: space-between;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+    }
+    .nav-link:hover, .nav-link.active, .manage-item:hover, .manage-item.active { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.12); }
+    .sidebar-panel, .card, .table-card, .profile-panel, .status-column { padding: 20px; }
+    .sidebar-panel { border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .sidebar-panel h2, .section-heading, .card-title { margin: 0 0 10px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--yellow-primary); }
+    .content { padding: 28px; }
+    .view-header, .card-header, .table-header, .form-header, .status-header, .button-row, .profile-summary, .name-row, .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .view-header, .card-header, .table-header, .form-header, .status-header { justify-content: space-between; margin-bottom: 18px; }
+    .status-pill, .tag, .status-badge, .group-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .status-badge.on { color: #101010; background: var(--accent, var(--yellow-primary)); border-color: transparent; font-weight: 700; }
+    .stats-grid, .dashboard-grid, .profile-grid, .manage-layout, .tracker-grid, .relationship-grid, .filters-grid, .form-grid, .appearance-grid, .detail-grid, .character-grid, .connection-list, .mini-grid, .tag-cloud {
+      display: grid;
+      gap: 18px;
+    }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .dashboard-grid { grid-template-columns: 1.6fr 1fr; }
+    .profile-grid { grid-template-columns: 1.2fr 0.8fr; }
+    .manage-layout { grid-template-columns: 320px minmax(0, 1fr); }
+    .tracker-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .relationship-grid { grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); }
+    .filters-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .appearance-grid, .detail-grid, .mini-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .character-grid, .connection-list { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .tag-cloud { grid-template-columns: repeat(auto-fit, minmax(100px, max-content)); gap: 10px; }
+    .stat-card, .character-card, .connection-card { position: relative; overflow: hidden; padding: 18px 18px 18px 22px; }
+    .stat-card::before, .character-card::before, .profile-panel::before, .connection-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 6px;
+      background: var(--accent, var(--pink-primary));
+    }
+    .stat-card .value { margin: 20px 0 8px; font-size: 2.2rem; font-weight: 700; }
+    .meta-label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.78rem; }
+    .field, .search-field { display: grid; gap: 8px; }
+    .field label, .search-field label { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .field input, .field select, .field textarea, .search-field input, .search-field select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      outline: none;
+    }
+    .field textarea { min-height: 120px; resize: vertical; }
+    .field-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .field-checkbox label { margin: 0; color: var(--text); font-size: 0.92rem; text-transform: none; letter-spacing: 0; }
+    .button, .ghost-button, .danger-button, .small-button { padding: 12px 16px; border: 1px solid transparent; cursor: pointer; }
+    .button:hover, .ghost-button:hover, .danger-button:hover, .small-button:hover { transform: translateY(-1px); }
+    .button { background: linear-gradient(135deg, var(--pink-primary), var(--yellow-primary)); color: #1f1f1f; font-weight: 700; }
+    .ghost-button, .small-button { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); color: var(--text); }
+    .danger-button { background: rgba(212, 106, 106, 0.14); border-color: rgba(212, 106, 106, 0.35); color: #ffdede; }
+    .small-button { padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; }
+    .table-wrap { overflow: auto; border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.05); }
+    table { width: 100%; border-collapse: collapse; min-width: 860px; }
+    th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    th { position: sticky; top: 0; background: #262626; z-index: 1; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+    .swatch { width: 14px; height: 14px; border-radius: 999px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06); }
+    .notice { padding: 14px 16px; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.12); }
+    .profile-hero { padding: 24px; border-radius: var(--radius-lg); background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent 62%), #242424; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: var(--shadow); }
+    .profile-hero h2 { margin: 10px 0 0; font-family: var(--font-heading); font-size: clamp(2rem, 3vw, 2.8rem); }
+    .relationship-map { display: grid; place-items: center; min-height: 360px; border-radius: var(--radius-lg); border: 1px solid rgba(255, 255, 255, 0.06); background: radial-gradient(circle at center, rgba(255, 255, 255, 0.04), transparent 54%), rgba(255, 255, 255, 0.02); overflow: hidden; }
+    .relationship-map svg { width: 100%; min-height: 360px; }
+    .relationship-map text { fill: var(--text); font-size: 12px; font-family: var(--font-body); }
+    .manage-list { max-height: 720px; overflow: auto; }
+    .manage-item { padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.03); cursor: pointer; }
+    @media (max-width: 1100px) {
+      .app-shell, .dashboard-grid, .profile-grid, .manage-layout, .tracker-grid, .relationship-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+    }
+    @media (max-width: 760px) {
+      .content { padding: 18px; }
+      .sidebar { padding: 18px; }
+      .view-header { flex-direction: column; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>OC Recycling System</h1>
+        <p>A local-first archive for color-coded characters, relationships, and progress tracking.</p>
+      </div>
+      <nav class="nav-list" id="sidebar-nav" aria-label="Main navigation"></nav>
+      <div class="sidebar-panel">
+        <h2>Archive Notes</h2>
+        <p>Everything lives in your browser via localStorage. Export JSON regularly if you want a clean backup snapshot.</p>
+      </div>
+    </aside>
+    <main class="content" id="app"></main>
+  </div>
+
+  <script type="module">
+    // data.js - storage and seed data
+    const STORAGE_KEY = "oc-recycling-system.characters.v1";
+    const RELATIONSHIP_LIMIT = 4;
+    const seedCharacters = [
+      { name: "Maya", pronouns: "she/her", personality: "6w2 ENFP", colorHex: "#cf7f81", colorName: "Dusty Pink", group: 5, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Madeline", pronouns: "she/her", personality: "2w8 ESFJ", colorHex: "#d62828", colorName: "Bright Strong Red", group: 5, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Niall", pronouns: "he/him", personality: "9w2 ESFJ", colorHex: "#6b7c5d", colorName: "Mosswood Green", group: 5, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Deirdre", pronouns: "she/her", personality: "8w4 INFJ", colorHex: "#c8981e", colorName: "Aged Gold", group: 5, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Linda", pronouns: "she/her", personality: "4w6 ISFP", colorHex: "#5f9e6e", colorName: "Muted Emerald", group: 4, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Radcliffe", pronouns: "he/they", personality: "8w1 ISTP", colorHex: "#4b006e", colorName: "Royal Purple", group: 4, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Zee", pronouns: "they/them", personality: "4w8 ISTP", colorHex: "#e0218a", colorName: "Barbie Magenta", group: 4, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Nik", pronouns: "he/him", personality: "2w4 ISFJ", colorHex: "#800020", colorName: "Maroon", group: 4, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Nesto", pronouns: "he/him", personality: "7w2 ESFP", colorHex: "#56633e", colorName: "Olive Green", group: 1, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Daeya", pronouns: "she/they", personality: "5w8 ISTJ", colorHex: "#576880", colorName: "Slate Blue", group: 1, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Aini", pronouns: "she/her", personality: "2w7 ENFJ", colorHex: "#e3f57f", colorName: "Sunny Pear", group: 1, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Shinji", pronouns: "they/them", personality: "9w7 ENFP", colorHex: "#4bd698", colorName: "Minty Teal", group: 1, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Harmony", pronouns: "she/her", personality: "3w2 ESFP", colorHex: "#d1783c", colorName: "Burnt Orange", group: 3, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Tonic", pronouns: "she/they", personality: "4w9 INFP", colorHex: "#605c29", colorName: "Plaid Green", group: 3, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Corey", pronouns: "she/her", personality: "8w3 ESTP", colorHex: "#722f37", colorName: "Wine Red", group: 3, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Elijah", pronouns: "they/them", personality: "7w4 ESFP", colorHex: "#c8a2c8", colorName: "Lilac", group: 3, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Patty", pronouns: "she/they", personality: "6w4 ISFJ", colorHex: "#aba39b", colorName: "Hearthstone Grey", group: 2, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Penny", pronouns: "she/her", personality: "3w6 ESFP", colorHex: "#673f79", colorName: "Plum Royale", group: 2, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Silas", pronouns: "he/him", personality: "4w8 ENTP", colorHex: "#c96f3d", colorName: "Molten Copper", group: 2, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false },
+      { name: "Fiona", pronouns: "she/her", personality: "8w4 ENFJ", colorHex: "#7d1e3e", colorName: "Garnet Glare", group: 2, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false }
+    ];
+    const relationshipSeeds = [
+      ["Nesto", "Daeya"], ["Fiona", "Penny"], ["Harmony", "Tonic"], ["Elijah", "Radcliffe"],
+      ["Niall", "Madeline"], ["Maya", "Harmony"], ["Linda", "Radcliffe"], ["Deirdre", "Niall"],
+      ["Niall", "Maya"], ["Madeline", "Maya"], ["Aini", "Shinji"], ["Zee", "Nesto"],
+      ["Zee", "Daeya"], ["Elijah", "Zee"]
+    ];
+    const navItems = [
+      { hash: "#dashboard", label: "Dashboard", meta: "Home" },
+      { hash: "#list", label: "Master List", meta: "Search + filters" },
+      { hash: "#relationships", label: "Relationships", meta: "Connections" },
+      { hash: "#tracker", label: "Progress Tracker", meta: "Excel / Discord / Tumblr / AO3" },
+      { hash: "#manage", label: "Manage Archive", meta: "CRUD + backup" }
+    ];
+    const appState = {
+      characters: loadCharacters(),
+      filters: { query: "", mbti: "", enneagram: "", group: "", status: "" },
+      selectedManageId: null,
+      selectedRelationshipId: null,
+      notice: "Seed data loaded. Unknown status fields start as false until you fill them in."
+    };
+    const appElement = document.getElementById("app");
+    const navElement = document.getElementById("sidebar-nav");
+    function escapeHtml(value) {
+      return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+    }
+    function parsePersonality(personality) {
+      const [enneagram = "", mbti = ""] = String(personality || "").trim().split(/\s+/);
+      return { enneagram, mbti };
+    }
+    function buildPlaceholderText(name, group) {
+      return `${name} is archived in Group ${group}. This profile needs a fuller narrative pass, so this note marks where lore, timeline beats, and emotional stakes can be expanded later.`;
+    }
+    function buildAppearance(name, colorName) {
+      return {
+        height: "To be decided",
+        bodyType: `Placeholder silhouette with ${colorName.toLowerCase()} styling cues`,
+        hair: `${name}'s hair details still need a final note`,
+        eyes: "Appearance notes pending",
+        skin: "Complexion notes pending"
+      };
+    }
+    function createSeedData() {
+      const byName = new Map();
+      const characters = seedCharacters.map((character, index) => {
+        const parsed = parsePersonality(character.personality);
+        const record = {
+          id: index + 1,
+          name: character.name,
+          pronouns: character.pronouns,
+          personality: character.personality,
+          mbti: parsed.mbti,
+          enneagram: parsed.enneagram,
+          colorHex: character.colorHex,
+          colorName: character.colorName,
+          group: character.group,
+          excelStatus: Boolean(character.excelStatus),
+          discordStatus: Boolean(character.discordStatus),
+          tumblrStatus: Boolean(character.tumblrStatus),
+          ao3Status: Boolean(character.ao3Status),
+          backstory: buildPlaceholderText(character.name, character.group),
+          appearance: buildAppearance(character.name, character.colorName),
+          relationships: []
+        };
+        byName.set(character.name, record.id);
+        return record;
+      });
+      for (const [fromName, toName] of relationshipSeeds) {
+        const fromId = byName.get(fromName);
+        const toId = byName.get(toName);
+        if (!fromId || !toId) continue;
+        const fromCharacter = characters.find((item) => item.id === fromId);
+        const toCharacter = characters.find((item) => item.id === toId);
+        if (fromCharacter.relationships.length < RELATIONSHIP_LIMIT && !fromCharacter.relationships.includes(toId)) fromCharacter.relationships.push(toId);
+        if (toCharacter.relationships.length < RELATIONSHIP_LIMIT && !toCharacter.relationships.includes(fromId)) toCharacter.relationships.push(fromId);
+      }
+      return characters;
+    }
+    function normalizeCharacter(rawCharacter, index = 0) {
+      const personality = rawCharacter.personality || `${rawCharacter.enneagram || ""} ${rawCharacter.mbti || ""}`.trim();
+      const parsed = parsePersonality(personality);
+      const appearance = rawCharacter.appearance || {};
+      return {
+        id: Number(rawCharacter.id) || index + 1,
+        name: rawCharacter.name || "Untitled OC",
+        pronouns: rawCharacter.pronouns || "unknown",
+        personality,
+        mbti: rawCharacter.mbti || parsed.mbti,
+        enneagram: rawCharacter.enneagram || parsed.enneagram,
+        colorHex: rawCharacter.colorHex || "#888888",
+        colorName: rawCharacter.colorName || "Unsorted",
+        group: Number(rawCharacter.group) || 1,
+        excelStatus: Boolean(rawCharacter.excelStatus),
+        discordStatus: Boolean(rawCharacter.discordStatus),
+        tumblrStatus: Boolean(rawCharacter.tumblrStatus),
+        ao3Status: Boolean(rawCharacter.ao3Status),
+        backstory: rawCharacter.backstory || "Backstory note pending.",
+        appearance: {
+          height: appearance.height || "To be decided",
+          bodyType: appearance.bodyType || "To be decided",
+          hair: appearance.hair || "To be decided",
+          eyes: appearance.eyes || "To be decided",
+          skin: appearance.skin || "To be decided"
+        },
+        relationships: Array.isArray(rawCharacter.relationships)
+          ? rawCharacter.relationships.map((value) => Number(value)).filter((value, idx, array) => Number.isInteger(value) && value > 0 && array.indexOf(value) === idx).slice(0, RELATIONSHIP_LIMIT)
+          : []
+      };
+    }
+    function loadCharacters() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return createSeedData();
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) return createSeedData();
+        return parsed.map(normalizeCharacter);
+      } catch (error) {
+        console.error("Failed to load characters from localStorage.", error);
+        return createSeedData();
+      }
+    }
+    function saveCharacters(characters) { localStorage.setItem(STORAGE_KEY, JSON.stringify(characters)); }
+    function exportCharacters(characters) {
+      const payload = JSON.stringify(characters, null, 2);
+      const blob = new Blob([payload], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `oc-recycling-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+    function importCharacters(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result || "[]"));
+            if (!Array.isArray(parsed)) return reject(new Error("The imported JSON must be an array of characters."));
+            resolve(parsed.map(normalizeCharacter));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(reader.error || new Error("Unable to read file."));
+        reader.readAsText(file);
+      });
+    }
+    // filters.js - search and filter helpers
+    function getUniqueValues(characters, key) { return [...new Set(characters.map((character) => character[key]).filter(Boolean))].sort(); }
+    function matchesStatusFilter(character, statusFilter) {
+      if (!statusFilter) return true;
+      const mapping = { excel: character.excelStatus, discord: character.discordStatus, tumblr: character.tumblrStatus, ao3: character.ao3Status };
+      return Boolean(mapping[statusFilter]);
+    }
+    function filterCharacters(characters, filters) {
+      const query = filters.query.trim().toLowerCase();
+      return characters.filter((character) => {
+        const searchableText = [character.name, character.pronouns, character.personality, character.backstory, character.colorName].join(" ").toLowerCase();
+        return (!query || searchableText.includes(query)) && (!filters.mbti || character.mbti === filters.mbti) && (!filters.enneagram || character.enneagram === filters.enneagram) && (!filters.group || Number(filters.group) === character.group) && matchesStatusFilter(character, filters.status);
+      });
+    }
+    // relationships.js - connection lookups and visualizer
+    function getCharacterById(characters, id) { return characters.find((character) => character.id === Number(id)); }
+    function getRelationshipCharacters(characters, character) { return character.relationships.map((id) => getCharacterById(characters, id)).filter(Boolean).slice(0, RELATIONSHIP_LIMIT); }
+    function buildRelationshipSvg(character, relatedCharacters) {
+      const width = 640;
+      const height = 360;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = 118;
+      const nodes = relatedCharacters.map((relatedCharacter, index) => {
+        const angle = (Math.PI * 2 * index) / Math.max(relatedCharacters.length, 1) - Math.PI / 2;
+        return { ...relatedCharacter, x: centerX + Math.cos(angle) * radius, y: centerY + Math.sin(angle) * radius };
+      });
+      const lines = nodes.map((node) => `<line x1="${centerX}" y1="${centerY}" x2="${node.x}" y2="${node.y}" stroke="${node.colorHex}" stroke-width="3" stroke-linecap="round" opacity="0.75"></line>`).join("");
+      const satellites = nodes.map((node) => `<a href="#profile/${node.id}"><circle cx="${node.x}" cy="${node.y}" r="28" fill="${node.colorHex}" opacity="0.95"></circle><circle cx="${node.x}" cy="${node.y}" r="32" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"></circle><text x="${node.x}" y="${node.y + 48}" text-anchor="middle">${escapeHtml(node.name)}</text></a>`).join("");
+      return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Relationship map for ${escapeHtml(character.name)}"><defs><radialGradient id="core-glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${character.colorHex}" stop-opacity="0.45"></stop><stop offset="100%" stop-color="${character.colorHex}" stop-opacity="0"></stop></radialGradient></defs><circle cx="${centerX}" cy="${centerY}" r="110" fill="url(#core-glow)"></circle>${lines}<circle cx="${centerX}" cy="${centerY}" r="42" fill="${character.colorHex}"></circle><circle cx="${centerX}" cy="${centerY}" r="46" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2"></circle><text x="${centerX}" y="${centerY + 72}" text-anchor="middle">${escapeHtml(character.name)}</text>${satellites}</svg>`;
+    }
+    // crud.js - form serialization and persistence
+    function getNextId(characters) { return characters.reduce((max, character) => Math.max(max, character.id), 0) + 1; }
+    function serializeForm(form) {
+      const data = new FormData(form);
+      const id = data.get("id");
+      const personality = String(data.get("personality") || "").trim();
+      const parsed = parsePersonality(personality);
+      const relationships = String(data.get("relationships") || "").split(",").map((value) => Number(value.trim())).filter((value, index, array) => Number.isInteger(value) && value > 0 && array.indexOf(value) === index).slice(0, RELATIONSHIP_LIMIT);
+      return {
+        id: id ? Number(id) : null,
+        name: String(data.get("name") || "").trim(),
+        pronouns: String(data.get("pronouns") || "").trim(),
+        personality,
+        mbti: parsed.mbti,
+        enneagram: parsed.enneagram,
+        colorHex: String(data.get("colorHex") || "").trim(),
+        colorName: String(data.get("colorName") || "").trim(),
+        group: Number(data.get("group") || 0),
+        excelStatus: data.get("excelStatus") === "on",
+        discordStatus: data.get("discordStatus") === "on",
+        tumblrStatus: data.get("tumblrStatus") === "on",
+        ao3Status: data.get("ao3Status") === "on",
+        backstory: String(data.get("backstory") || "").trim(),
+        appearance: {
+          height: String(data.get("height") || "").trim(),
+          bodyType: String(data.get("bodyType") || "").trim(),
+          hair: String(data.get("hair") || "").trim(),
+          eyes: String(data.get("eyes") || "").trim(),
+          skin: String(data.get("skin") || "").trim()
+        },
+        relationships
+      };
+    }
+    function validateCharacter(character) {
+      const errors = [];
+      for (const field of ["name", "pronouns", "personality", "colorHex", "colorName", "backstory"]) if (!character[field]) errors.push(`${field} is required.`);
+      if (!/^#[\da-fA-F]{6}$/.test(character.colorHex)) errors.push("colorHex must use the format #RRGGBB.");
+      if (character.group < 1 || character.group > 5) errors.push("group must be between 1 and 5.");
+      if (!character.mbti || !character.enneagram) errors.push("personality should follow the pattern '6w2 ENFP'.");
+      if (character.relationships.length > RELATIONSHIP_LIMIT) errors.push(`Only ${RELATIONSHIP_LIMIT} relationships are allowed per character.`);
+      if (character.relationships.includes(character.id)) errors.push("A character cannot relate to themself.");
+      return errors;
+    }
+    function upsertCharacter(characters, character) { return character.id ? characters.map((item) => item.id === character.id ? character : item) : [...characters, { ...character, id: getNextId(characters) }]; }
+    function deleteCharacter(characters, id) { return characters.filter((character) => character.id !== id).map((character) => ({ ...character, relationships: character.relationships.filter((relationshipId) => relationshipId !== id) })); }
+    function getRoute() {
+      const hash = window.location.hash || "#dashboard";
+      const [base, id] = hash.split("/");
+      return { base, id: id ? Number(id) : null };
+    }
+    function persistCharacters() { saveCharacters(appState.characters); }
+    function setNotice(message) { appState.notice = message; }
+    function updateSelections() {
+      if (!appState.selectedRelationshipId || !getCharacterById(appState.characters, appState.selectedRelationshipId)) appState.selectedRelationshipId = appState.characters[0]?.id || null;
+      if (!appState.selectedManageId || !getCharacterById(appState.characters, appState.selectedManageId)) appState.selectedManageId = appState.characters[0]?.id || null;
+    }
+    function getStatusCounts(characters) {
+      return {
+        excel: characters.filter((item) => item.excelStatus).length,
+        discord: characters.filter((item) => item.discordStatus).length,
+        tumblr: characters.filter((item) => item.tumblrStatus).length,
+        ao3: characters.filter((item) => item.ao3Status).length
+      };
+    }
+    function renderNav(currentBase) {
+      navElement.innerHTML = navItems.map((item) => `<a class="nav-link ${item.hash === currentBase ? "active" : ""}" href="${item.hash}"><span>${item.label}</span><span class="meta-label">${item.meta}</span></a>`).join("");
+    }
+    function renderCharacterCard(character) {
+      return `<article class="character-card" style="--accent:${character.colorHex};"><div class="name-row"><span class="swatch" style="background:${character.colorHex};"></span><strong>${escapeHtml(character.name)}</strong></div><p class="helper-text">${escapeHtml(character.pronouns)} � ${escapeHtml(character.personality)}</p><div class="tag-cloud"><span class="tag">Group ${character.group}</span><span class="tag">${escapeHtml(character.colorName)}</span></div><div class="button-row" style="margin-top: 14px;"><a class="small-button" href="#profile/${character.id}">Open Profile</a></div></article>`;
+    }
+    function renderStatusBadge(label, enabled, accent) { return `<span class="status-badge ${enabled ? "on" : ""}" style="--accent:${accent};">${label}</span>`; }
+    function renderStatCards() {
+      const statusCounts = getStatusCounts(appState.characters);
+      const groupCounts = [1, 2, 3, 4, 5].map((group) => ({ group, count: appState.characters.filter((character) => character.group === group).length }));
+      return `<div class="stats-grid"><article class="stat-card" style="--accent:var(--pink-primary);"><div class="meta-label">Total OCs</div><div class="value">${appState.characters.length}</div><p class="helper-text">The full archive currently seeded into the browser.</p></article><article class="stat-card" style="--accent:var(--yellow-primary);"><div class="meta-label">Excel Ready</div><div class="value">${statusCounts.excel}</div><p class="helper-text">Profiles marked as reflected in your spreadsheet.</p></article><article class="stat-card" style="--accent:#7fb6f5;"><div class="meta-label">Discord Ready</div><div class="value">${statusCounts.discord}</div><p class="helper-text">Characters with Discord-side notes or setup tracked.</p></article><article class="stat-card" style="--accent:#f997a7;"><div class="meta-label">AO3 Ready</div><div class="value">${statusCounts.ao3}</div><p class="helper-text">Draftable or posted archive notes tagged for writing.</p></article></div><div class="mini-grid">${groupCounts.map(({ group, count }) => `<article class="card"><div class="card-title">Group ${group}</div><div class="value" style="font-size:1.75rem; margin:4px 0 0;">${count}</div><p class="helper-text">Characters currently assigned to this cluster.</p></article>`).join("")}</div>`;
+    }
+    function renderDashboard() {
+      const recentCharacters = [...appState.characters].sort((a, b) => a.group - b.group || a.name.localeCompare(b.name)).slice(0, 6);
+      return `<section class="view-header"><div><h2 class="view-title">Dashboard</h2><p>Your archive snapshot, group balance, and quick jumps into the character collection.</p></div><div class="status-pill">${escapeHtml(appState.notice)}</div></section>${renderStatCards()}<section class="dashboard-grid" style="margin-top:18px;"><article class="card"><div class="card-header"><div><div class="section-heading">Archive Pulse</div><div class="helper-text">A quick read on what exists and what still needs filling out.</div></div></div><div class="detail-grid"><div class="notice">The seed import includes all 20 OCs from the provided table, plus confirmed relationships. Status flags were not provided in the reference table, so they begin unchecked.</div><div class="notice">Use <a href="#manage">Manage Archive</a> to add richer backstories, appearance notes, and manual progress tracking as you go.</div></div></article><article class="card"><div class="card-header"><div><div class="section-heading">Quick Profiles</div><div class="helper-text">Fast access to a few seeded records.</div></div></div><div class="character-grid">${recentCharacters.map(renderCharacterCard).join("")}</div></article></section>`;
+    }
+    function renderFiltersPanel(filteredCharacters) {
+      const mbtiOptions = getUniqueValues(appState.characters, "mbti");
+      const enneagramOptions = getUniqueValues(appState.characters, "enneagram");
+      return `<section class="table-card"><div class="table-header"><div><h2 class="view-title" style="font-size:1.35rem;">Master List</h2><p class="helper-text">Search across names and lore fragments, then narrow by type, group, or status flag.</p></div><div class="status-pill">${filteredCharacters.length} visible</div></div><div class="filters-grid"><div class="search-field"><label for="filter-query">Search archive</label><input id="filter-query" name="query" type="search" placeholder="Name, backstory, color, pronouns..." value="${escapeHtml(appState.filters.query)}"></div><div class="search-field"><label for="filter-mbti">MBTI</label><select id="filter-mbti" name="mbti"><option value="">All MBTI</option>${mbtiOptions.map((value) => `<option value="${value}" ${appState.filters.mbti === value ? "selected" : ""}>${value}</option>`).join("")}</select></div><div class="search-field"><label for="filter-enneagram">Enneagram</label><select id="filter-enneagram" name="enneagram"><option value="">All Enneagram</option>${enneagramOptions.map((value) => `<option value="${value}" ${appState.filters.enneagram === value ? "selected" : ""}>${value}</option>`).join("")}</select></div><div class="search-field"><label for="filter-group">Group</label><select id="filter-group" name="group"><option value="">All Groups</option>${[1, 2, 3, 4, 5].map((group) => `<option value="${group}" ${String(appState.filters.group) === String(group) ? "selected" : ""}>Group ${group}</option>`).join("")}</select></div><div class="search-field"><label for="filter-status">Status Flag</label><select id="filter-status" name="status"><option value="">Any status</option><option value="excel" ${appState.filters.status === "excel" ? "selected" : ""}>Excel ready</option><option value="discord" ${appState.filters.status === "discord" ? "selected" : ""}>Discord ready</option><option value="tumblr" ${appState.filters.status === "tumblr" ? "selected" : ""}>Tumblr ready</option><option value="ao3" ${appState.filters.status === "ao3" ? "selected" : ""}>AO3 ready</option></select></div></div><div class="button-row" style="margin-bottom:18px;"><button class="ghost-button" type="button" data-action="clear-filters">Clear Filters</button></div><div class="table-wrap"><table><thead><tr><th>Character</th><th>Pronouns</th><th>Personality</th><th>Group</th><th>Color</th><th>Status</th><th>Profile</th></tr></thead><tbody>${filteredCharacters.map((character) => `<tr><td><div class="name-row"><span class="swatch" style="background:${character.colorHex};"></span><strong>${escapeHtml(character.name)}</strong></div></td><td>${escapeHtml(character.pronouns)}</td><td>${escapeHtml(character.personality)}</td><td>Group ${character.group}</td><td>${escapeHtml(character.colorName)}<br><span class="meta-label">${escapeHtml(character.colorHex)}</span></td><td><div class="status-row">${renderStatusBadge("XLS", character.excelStatus, character.colorHex)}${renderStatusBadge("DIS", character.discordStatus, character.colorHex)}${renderStatusBadge("TBLR", character.tumblrStatus, character.colorHex)}${renderStatusBadge("AO3", character.ao3Status, character.colorHex)}</div></td><td><a class="small-button" href="#profile/${character.id}">Open</a></td></tr>`).join("")}</tbody></table></div></section><section style="margin-top:18px;"><div class="character-grid">${filteredCharacters.map(renderCharacterCard).join("") || `<div class="empty-state">No characters match the current filter set.</div>`}</div></section>`;
+    }
+    function renderProfile(character) {
+      if (!character) return `<section class="view-header"><div><h2 class="view-title">Profile Missing</h2><p>The requested character could not be found in the current archive.</p></div></section><div class="notice">Try returning to the <a href="#list">Master List</a> or restore a backup JSON file.</div>`;
+      const relatedCharacters = getRelationshipCharacters(appState.characters, character);
+      return `<section class="view-header"><div><h2 class="view-title">Profile Archive</h2><p>Full detail page for one OC, using their personal color as the anchor accent.</p></div><a class="ghost-button" href="#manage" data-manage-id="${character.id}">Edit This Character</a></section><section class="profile-hero" style="border-left:6px solid ${character.colorHex};"><div class="name-row"><span class="swatch" style="background:${character.colorHex}; width:18px; height:18px;"></span><span class="group-chip">Group ${character.group}</span></div><h2>${escapeHtml(character.name)}</h2><div class="profile-summary"><span class="tag">${escapeHtml(character.pronouns)}</span><span class="tag">${escapeHtml(character.personality)}</span><span class="tag">${escapeHtml(character.colorName)}</span><span class="tag">${escapeHtml(character.colorHex)}</span></div><p>${escapeHtml(character.backstory)}</p></section><section class="profile-grid" style="margin-top:18px;"><article class="profile-panel" style="--accent:${character.colorHex};"><div class="card-header"><div><div class="section-heading">Appearance Archive</div><div class="helper-text">Placeholder fields ready for refinement.</div></div></div><div class="appearance-grid"><div><div class="meta-label">Height</div><div>${escapeHtml(character.appearance.height)}</div></div><div><div class="meta-label">Body Type</div><div>${escapeHtml(character.appearance.bodyType)}</div></div><div><div class="meta-label">Hair</div><div>${escapeHtml(character.appearance.hair)}</div></div><div><div class="meta-label">Eyes</div><div>${escapeHtml(character.appearance.eyes)}</div></div><div><div class="meta-label">Skin</div><div>${escapeHtml(character.appearance.skin)}</div></div></div></article><article class="profile-panel" style="--accent:${character.colorHex};"><div class="card-header"><div><div class="section-heading">Progress Flags</div><div class="helper-text">Quick tracker across your current toolset.</div></div></div><div class="tag-cloud">${renderStatusBadge("Excel", character.excelStatus, character.colorHex)}${renderStatusBadge("Discord", character.discordStatus, character.colorHex)}${renderStatusBadge("Tumblr", character.tumblrStatus, character.colorHex)}${renderStatusBadge("AO3", character.ao3Status, character.colorHex)}</div></article></section><section class="card" style="margin-top:18px;"><div class="card-header"><div><div class="section-heading">Connections</div><div class="helper-text">Each profile can hold up to ${RELATIONSHIP_LIMIT} linked character IDs.</div></div></div>${relatedCharacters.length ? `<div class="connection-list">${relatedCharacters.map((relatedCharacter) => `<article class="connection-card" style="--accent:${relatedCharacter.colorHex};"><div class="name-row"><span class="swatch" style="background:${relatedCharacter.colorHex};"></span><strong>${escapeHtml(relatedCharacter.name)}</strong></div><p class="helper-text">${escapeHtml(relatedCharacter.personality)} � Group ${relatedCharacter.group}</p><a class="small-button" href="#profile/${relatedCharacter.id}">Jump to Profile</a></article>`).join("")}</div>` : `<div class="empty-state">No relationships have been defined for this character yet.</div>`}</section>`;
+    }
+    function renderRelationships() {
+      const selectedCharacter = getCharacterById(appState.characters, appState.selectedRelationshipId) || appState.characters[0];
+      const relatedCharacters = selectedCharacter ? getRelationshipCharacters(appState.characters, selectedCharacter) : [];
+      return `<section class="view-header"><div><h2 class="view-title">Relationship Visualizer</h2><p>Select a character to inspect their capped relationship map and quick-access connection cards.</p></div><div class="status-pill">Up to ${RELATIONSHIP_LIMIT} links per character</div></section><section class="relationship-grid"><article class="card"><div class="card-header"><div><div class="section-heading">Character Focus</div><div class="helper-text">Change the node in focus without leaving the page.</div></div></div><div class="field"><label for="relationship-select">Select character</label><select id="relationship-select" data-action="select-relationship">${appState.characters.map((character) => `<option value="${character.id}" ${character.id === selectedCharacter?.id ? "selected" : ""}>${escapeHtml(character.name)} � Group ${character.group}</option>`).join("")}</select></div><p class="notice" style="margin-top:18px;">This visual keeps the archive readable: one center character plus up to four color-coded linked nodes.</p></article><article class="card"><div class="relationship-map">${selectedCharacter ? buildRelationshipSvg(selectedCharacter, relatedCharacters) : `<div class="empty-state">No characters available.</div>`}</div></article></section><section class="card" style="margin-top:18px;"><div class="card-header"><div><div class="section-heading">Connection Cards</div><div class="helper-text">A readable fallback view for the same relationship data.</div></div></div>${selectedCharacter ? `<div class="connection-list"><article class="connection-card" style="--accent:${selectedCharacter.colorHex};"><div class="name-row"><span class="swatch" style="background:${selectedCharacter.colorHex};"></span><strong>${escapeHtml(selectedCharacter.name)}</strong></div><p class="helper-text">Anchor node � ${escapeHtml(selectedCharacter.personality)} � ${escapeHtml(selectedCharacter.colorName)}</p></article>${relatedCharacters.map((relatedCharacter) => `<article class="connection-card" style="--accent:${relatedCharacter.colorHex};"><div class="name-row"><span class="swatch" style="background:${relatedCharacter.colorHex};"></span><strong>${escapeHtml(relatedCharacter.name)}</strong></div><p class="helper-text">${escapeHtml(relatedCharacter.pronouns)} � ${escapeHtml(relatedCharacter.personality)}</p><a class="small-button" href="#profile/${relatedCharacter.id}">Open Profile</a></article>`).join("") || `<div class="empty-state">No linked characters yet.</div>`}</div>` : `<div class="empty-state">No characters available.</div>`}</section>`;
+    }
+    function renderTracker() {
+      const columns = [{ key: "excelStatus", label: "Excel" }, { key: "discordStatus", label: "Discord" }, { key: "tumblrStatus", label: "Tumblr" }, { key: "ao3Status", label: "AO3" }];
+      return `<section class="view-header"><div><h2 class="view-title">Progress Tracker</h2><p>A kanban-like status board showing which profiles have been handled in each archive space.</p></div><a class="ghost-button" href="#manage">Update Flags</a></section><section class="tracker-grid">${columns.map((column) => { const ready = appState.characters.filter((character) => character[column.key]); return `<article class="status-column"><div class="status-header"><div><div class="section-heading">${column.label}</div><div class="helper-text">${ready.length} marked ready</div></div></div><div class="manage-list">${ready.length ? ready.map(renderCharacterCard).join("") : `<div class="empty-state">Nothing marked yet.</div>`}</div></article>`; }).join("")}</section>`;
+    }
+    function renderManageView() {
+      const selectedCharacter = getCharacterById(appState.characters, appState.selectedManageId);
+      const character = selectedCharacter || { id: "", name: "", pronouns: "", personality: "", colorHex: "#888888", colorName: "", group: 1, excelStatus: false, discordStatus: false, tumblrStatus: false, ao3Status: false, backstory: "", appearance: { height: "", bodyType: "", hair: "", eyes: "", skin: "" }, relationships: [] };
+      return `<section class="view-header"><div><h2 class="view-title">Manage Archive</h2><p>Add new OCs, edit existing entries, delete records, and import or export the whole collection as JSON.</p></div><div class="status-pill">${appState.characters.length} stored locally</div></section><section class="manage-layout"><article class="card"><div class="card-header"><div><div class="section-heading">Character Index</div><div class="helper-text">Pick a record to edit or start a fresh one.</div></div></div><div class="button-row" style="margin-bottom:18px;"><button class="button" type="button" data-action="new-character">New Character</button><button class="ghost-button" type="button" data-action="export-json">Export JSON</button></div><div class="field"><label for="import-json">Restore from JSON</label><input id="import-json" type="file" accept="application/json" data-action="import-json"></div><div class="manage-list" style="margin-top:18px;">${appState.characters.map((item) => `<button class="manage-item ${item.id === appState.selectedManageId ? "active" : ""}" type="button" data-action="edit-character" data-id="${item.id}"><div class="name-row"><span class="swatch" style="background:${item.colorHex};"></span><strong>${escapeHtml(item.name)}</strong></div><div class="helper-text">${escapeHtml(item.personality)} � Group ${item.group}</div></button>`).join("")}</div></article><article class="card"><div class="form-header"><div><div class="section-heading">${character.id ? "Edit Character" : "New Character"}</div><div class="helper-text">Relationship IDs are comma-separated and capped at ${RELATIONSHIP_LIMIT}.</div></div>${character.id ? `<button class="danger-button" type="button" data-action="delete-character" data-id="${character.id}">Delete</button>` : ""}</div><form id="character-form"><input type="hidden" name="id" value="${character.id}"><div class="form-grid"><div class="field"><label for="name">Name</label><input id="name" name="name" required value="${escapeHtml(character.name)}"></div><div class="field"><label for="pronouns">Pronouns</label><input id="pronouns" name="pronouns" required value="${escapeHtml(character.pronouns)}"></div><div class="field"><label for="personality">Personality</label><input id="personality" name="personality" required placeholder="6w2 ENFP" value="${escapeHtml(character.personality)}"></div><div class="field"><label for="group">Group</label><select id="group" name="group">${[1, 2, 3, 4, 5].map((group) => `<option value="${group}" ${group === character.group ? "selected" : ""}>Group ${group}</option>`).join("")}</select></div><div class="field"><label for="colorHex">Color Hex</label><input id="colorHex" name="colorHex" required placeholder="#cf7f81" value="${escapeHtml(character.colorHex)}"></div><div class="field"><label for="colorName">Color Name</label><input id="colorName" name="colorName" required value="${escapeHtml(character.colorName)}"></div><div class="field" style="grid-column:1 / -1;"><label for="backstory">Backstory</label><textarea id="backstory" name="backstory" required>${escapeHtml(character.backstory)}</textarea></div></div><div class="card" style="margin-top:18px; padding:18px;"><div class="section-heading">Appearance</div><div class="form-grid"><div class="field"><label for="height">Height</label><input id="height" name="height" value="${escapeHtml(character.appearance.height)}"></div><div class="field"><label for="bodyType">Body Type</label><input id="bodyType" name="bodyType" value="${escapeHtml(character.appearance.bodyType)}"></div><div class="field"><label for="hair">Hair</label><input id="hair" name="hair" value="${escapeHtml(character.appearance.hair)}"></div><div class="field"><label for="eyes">Eyes</label><input id="eyes" name="eyes" value="${escapeHtml(character.appearance.eyes)}"></div><div class="field"><label for="skin">Skin</label><input id="skin" name="skin" value="${escapeHtml(character.appearance.skin)}"></div><div class="field"><label for="relationships">Relationships (IDs)</label><input id="relationships" name="relationships" placeholder="2, 4, 7" value="${escapeHtml(character.relationships.join(", "))}"></div></div></div><div class="card" style="margin-top:18px; padding:18px;"><div class="section-heading">Status Flags</div><div class="form-grid"><div class="field-checkbox"><input id="excelStatus" name="excelStatus" type="checkbox" ${character.excelStatus ? "checked" : ""}><label for="excelStatus">Excel complete</label></div><div class="field-checkbox"><input id="discordStatus" name="discordStatus" type="checkbox" ${character.discordStatus ? "checked" : ""}><label for="discordStatus">Discord complete</label></div><div class="field-checkbox"><input id="tumblrStatus" name="tumblrStatus" type="checkbox" ${character.tumblrStatus ? "checked" : ""}><label for="tumblrStatus">Tumblr complete</label></div><div class="field-checkbox"><input id="ao3Status" name="ao3Status" type="checkbox" ${character.ao3Status ? "checked" : ""}><label for="ao3Status">AO3 complete</label></div></div></div><div class="button-row" style="margin-top:20px;"><button class="button" type="submit">${character.id ? "Save Changes" : "Create Character"}</button><button class="ghost-button" type="button" data-action="reset-form">Reset Form</button></div></form><p class="footer-note">Importing JSON replaces the current in-browser archive. Export before large edits if you want a rollback point.</p></article></section>`;
+    }
+    // ui.js - routing, rendering, and event wiring
+    function render() {
+      updateSelections();
+      const route = getRoute();
+      renderNav(route.base);
+      const filteredCharacters = filterCharacters(appState.characters, appState.filters);
+      if (route.base === "#list") appElement.innerHTML = renderFiltersPanel(filteredCharacters);
+      else if (route.base === "#profile") appElement.innerHTML = renderProfile(getCharacterById(appState.characters, route.id));
+      else if (route.base === "#relationships") appElement.innerHTML = renderRelationships();
+      else if (route.base === "#tracker") appElement.innerHTML = renderTracker();
+      else if (route.base === "#manage") appElement.innerHTML = renderManageView();
+      else appElement.innerHTML = renderDashboard();
+    }
+    function clearFilters() {
+      appState.filters = { query: "", mbti: "", enneagram: "", group: "", status: "" };
+      setNotice("Filters cleared.");
+      render();
+    }
+    function handleFilterInput(event) {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return;
+      if (!target.name || !(target.name in appState.filters)) return;
+      appState.filters[target.name] = target.value;
+      render();
+    }
+    async function handleImportFile(input) {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        appState.characters = await importCharacters(file);
+        persistCharacters();
+        setNotice(`Imported ${appState.characters.length} characters from backup JSON.`);
+        appState.selectedManageId = appState.characters[0]?.id || null;
+        appState.selectedRelationshipId = appState.characters[0]?.id || null;
+        render();
+      } catch (error) {
+        console.error(error);
+        window.alert("Import failed. Check that the file contains a valid JSON array of characters.");
+      } finally {
+        input.value = "";
+      }
+    }
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      if (!(form instanceof HTMLFormElement)) return;
+      const serialized = serializeForm(form);
+      if (!serialized.id) serialized.id = getNextId(appState.characters);
+      const errors = validateCharacter(serialized);
+      if (errors.length) return window.alert(errors.join("\n"));
+      appState.characters = upsertCharacter(appState.characters, serialized);
+      persistCharacters();
+      appState.selectedManageId = serialized.id;
+      appState.selectedRelationshipId = serialized.id;
+      setNotice(`${serialized.name} saved to localStorage.`);
+      window.location.hash = `#profile/${serialized.id}`;
+      render();
+    }
+    function handleActionClick(target) {
+      const actionTarget = target.closest("[data-action]");
+      if (!actionTarget) return;
+      const action = actionTarget.getAttribute("data-action");
+      const id = Number(actionTarget.getAttribute("data-id"));
+      if (action === "clear-filters") clearFilters();
+      if (action === "new-character") { appState.selectedManageId = null; setNotice("New character form ready."); render(); }
+      if (action === "edit-character" && id) { appState.selectedManageId = id; render(); }
+      if (action === "export-json") { exportCharacters(appState.characters); setNotice("Backup JSON exported."); render(); }
+      if (action === "reset-form") render();
+      if (action === "delete-character" && id) {
+        const targetCharacter = getCharacterById(appState.characters, id);
+        if (!targetCharacter) return;
+        if (!window.confirm(`Delete ${targetCharacter.name} from the local archive? This cannot be undone without a backup.`)) return;
+        appState.characters = deleteCharacter(appState.characters, id);
+        persistCharacters();
+        appState.selectedManageId = appState.characters[0]?.id || null;
+        appState.selectedRelationshipId = appState.characters[0]?.id || null;
+        setNotice(`${targetCharacter.name} deleted from localStorage.`);
+        render();
+      }
+    }
+    document.addEventListener("input", handleFilterInput);
+    document.addEventListener("change", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLSelectElement && target.dataset.action === "select-relationship") {
+        appState.selectedRelationshipId = Number(target.value);
+        render();
+      }
+      if (target instanceof HTMLInputElement && target.dataset.action === "import-json") handleImportFile(target);
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const manageLink = target.closest("[data-manage-id]");
+      if (manageLink) appState.selectedManageId = Number(manageLink.getAttribute("data-manage-id"));
+      handleActionClick(target);
+    });
+    document.addEventListener("submit", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLFormElement && target.id === "character-form") handleFormSubmit(event);
+    });
+    window.addEventListener("hashchange", render);
+    render();
+  </script>
+</body>
+</html>
+
+
